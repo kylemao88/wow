@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Skynet WebSocket 测试客户端</title>
+  <style>
+    #console { border:1px solid #ccc; padding:10px; height:200px; overflow-y:scroll; }
+    .msg { color: #666; margin: 5px 0; }
+    .send { color: #06c; }
+    .recv { color: #090; }
+  </style>
+</head>
+<body>
+  <input type="text" id="message" placeholder="输入消息">
+  <button onclick="sendMessage()">发送</button>
+  <button onclick="connect()">连接</button>
+  <button onclick="disconnect()">断开</button>
+  <div id="console"></div>
+
+  <script>
+    let ws = null;
+    
+    function connect() {
+      // ws = new WebSocket('ws://127.0.0.1:8081');
+      ws = new WebSocket('ws://9.134.51.130:8081');
+      
+      ws.onopen = () => addLog('连接已建立', 'system');
+      ws.onmessage = (ev) => addLog('收到回复: ' + ev.data, 'recv');
+      ws.onclose = () => addLog('连接已关闭', 'system');
+      ws.onerror = (err) => addLog('错误: ' + err.data, 'error');
+    }
+
+    function sendMessage() {
+      const msg = document.getElementById('message').value;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(msg);
+        addLog('发送消息: ' + msg, 'send');
+      } else {
+        addLog('请先建立连接', 'error');
+      }
+    }
+
+    function disconnect() {
+      if (ws) ws.close();
+    }
+
+    function addLog(text, type) {
+      const div = document.createElement('div');
+      div.className = `msg ${type}`;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+      document.getElementById('console').appendChild(div);
+    }
+  </script>
+</body>
+</html>
