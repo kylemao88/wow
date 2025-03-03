@@ -45,6 +45,29 @@ make
 
 后台模式下，log 记录在 `run/skynet.log` 中。
 
+如何运行客户端
+==============
+debug版本
+```
+python3.8 test/ws_client.py
+```
+simple版本
+```
+python3.8 test/ws_client_simple.py
+```
 
 
 
+注意问题记录
+==============
+```
+1. 编译pb.so一定要注意跟skynet的lua版本一致：
+cd wfff/3rd/lua-protobuf
+gcc -O2 -fPIC --shared \
+    -DLUA_USE_LINUX \
+    -DLUA_COMPAT_5_2 \
+    -I../../skynet/3rd/lua \
+    -o pb.so pb.c
+cp pb.so ../../skynet/luaclib/
+chmod 755 ../../skynet/luaclib/pb.so
+```
