@@ -1,0 +1,15 @@
+syntax = "proto3";
+package game;
+
+import "common.proto";
+
+message LoginReq {
+    common.Header header = 1;  // 添加消息头
+    string account = 2;
+    string password = 3;
+}
+
+message LoginResp {
+    common.ErrorResp error_resp = 1;  // 错误响应
+    int64 userid = 2;         // 用户ID
+}

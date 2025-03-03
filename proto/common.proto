@@ -1,0 +1,12 @@
+syntax = "proto3";
+package common;
+
+message Header {
+    string msg_type = 1;    // 消息类型名称
+    uint32 seq = 2;         // 序列号
+} 
+
+message ErrorResp {
+    string code = 1;        // 错误代码
+    string message = 2;     // 错误信息
+}
