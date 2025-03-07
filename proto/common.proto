@@ -1,12 +1,31 @@
 syntax = "proto3";
 package common;
 
+// **** 公共消息头部和回应 ****
 message Header {
     string msg_type = 1;    // 消息类型名称
     uint32 seq = 2;         // 序列号
-} 
+    uint32 version = 3;     // 协议版本号
+    int64 timestamp = 4;    // 消息时间戳
+    string client_version = 5; // 客户端版本
+}
+
 
 message ErrorResp {
     string code = 1;        // 错误代码
     string message = 2;     // 错误信息
 }
+
+
+
+// **** 基础公用数据结构可以在此定义 ****
+message PlayerInfo {
+    int64 userid = 1;
+    string nickname = 2;
+    int32 level = 3;
+    int64 exp = 4;
+    int32 vip_level = 5;
+}
+
+
+

@@ -156,6 +156,50 @@ async def test_login():
                 print(f"错误: {resp['error_resp'].get('code')} - {resp['error_resp'].get('message')}")
             else:
                 print(f"登录成功! 用户ID: {resp.get('userid')}")
+                return resp.get('userid')  # 返回用户ID供后续使用
+                
+    except Exception as e:
+        print(f"发生错误: {e}")
+    finally:
+        await client.close()
+
+async def test_get_player_info():
+    """测试获取玩家信息功能"""
+    client = ProtoClient()
+    try:
+        await client.connect()
+        
+        # 先登录获取用户ID
+        userid = await test_login()
+        if not userid:
+            print("登录失败，无法获取玩家信息")
+            return
+            
+        # 创建获取玩家信息请求
+        get_player_info_req = {
+            'header': {
+                'msg_type': 'game.GetPlayerInfoReq',
+                'seq': 2
+            },
+            'userid': userid
+        }
+        
+        # 发送获取玩家信息请求
+        resp = await client.send_request('game.GetPlayerInfoReq', get_player_info_req)
+        
+        # 处理响应
+        if resp:
+            print("\n获取玩家信息响应:")
+            if resp.get('error_resp') and resp['error_resp'].get('code') != "SUCCESS":
+                print(f"错误: {resp['error_resp'].get('code')} - {resp['error_resp'].get('message')}")
+            else:
+                player = resp.get('player', {})
+                print("玩家信息:")
+                print(f"- 用户ID: {player.get('userid')}")
+                print(f"- 昵称: {player.get('nickname')}")
+                print(f"- 等级: {player.get('level')}")
+                print(f"- 经验值: {player.get('exp')}")
+                print(f"- VIP等级: {player.get('vip_level')}")
                 
     except Exception as e:
         print(f"发生错误: {e}")
@@ -163,5 +207,5 @@ async def test_login():
         await client.close()
 
 if __name__ == "__main__":
-    asyncio.run(test_login())
+    asyncio.run(test_get_player_info())
     

@@ -13,3 +13,14 @@ message LoginResp {
     common.ErrorResp error_resp = 1;  // 错误响应
     int64 userid = 2;         // 用户ID
 }
+
+
+message GetPlayerInfoReq {
+    common.Header header = 1;  // 添加消息头
+    int64 userid = 2;         // 用户ID
+}
+
+message GetPlayerInfoResp {
+    common.ErrorResp error_resp = 1;  // 错误响应
+    common.PlayerInfo  player =2; // 玩家信息
+}
