@@ -125,6 +125,64 @@ function H.on_pong(ws, data)
     -- Invoked when the response to a ping frame is received.
 end
 
+-- 从已完成握手的fd创建WebSocket对象
+function ws.new_from_fd(id, handler, conf)
+    conf = conf or {}
+    handler = handler or {}
+
+    setmetatable(handler, { __index = H })
+
+    --[[
+    local self = {
+        id = id,
+        handler = handler,
+        mode = "server",
+        state = "OPEN",
+        message = {}, -- 消息缓冲区
+        frame = {},   -- 帧缓冲区
+        recv_count = 0,
+        send_count = 0,
+        masking_key = nil,
+        max_payload_len = conf.max_payload_len or 65535,
+        -- 添加与new方法一致的重要字段
+        client_terminated = false,
+        server_terminated = false,
+        mask_outgoing = conf.mask_outgoing,
+        check_origin = conf.check_origin
+    }
+    ]]
+
+
+    local self = {
+        id = id,
+        handler = handler,
+        mode = "server",
+        client_terminated = false,
+        server_terminated = false,
+        mask_outgoing = conf.mask_outgoing,
+        check_origin = conf.check_origin
+    }
+
+    self.handler.on_open(self)
+
+    skynet.error("WebSocket object created successfully from fd:", id)
+    return setmetatable(self, ws_mt)
+end
+
+-- 添加握手处理函数
+function ws.handle_handshake(id, header)
+    local code, resp = accept_connection(header, true, H.check_origin_ok)
+    if code then
+        -- 握手失败
+        response(id, code, resp)
+        return false
+    else
+        -- 握手成功
+        write(id, resp)
+        return true
+    end
+end
+
 function ws.new(id, header, handler, conf)
     local conf = conf or {}
     local handler = handler or {}

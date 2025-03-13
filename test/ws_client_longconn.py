@@ -13,6 +13,8 @@ class ProtoClient:
     def __init__(self, uri="ws://localhost:8081"):
         self.uri = uri
         self.proto_pool = None
+        self.seq = 1  # 消息序列号
+        self.userid = None  # 存储用户ID
         
     async def connect(self):
         """连接到WebSocket服务器"""
@@ -101,6 +103,14 @@ class ProtoClient:
         
     async def send_request(self, msg_type, data):
         """发送请求并等待响应"""
+        # 自动添加序列号
+        if 'header' in data:
+            data['header']['seq'] = self.seq
+        else:
+            data['header'] = {'msg_type': msg_type, 'seq': self.seq}
+            
+        self.seq += 1  # 递增序列号
+        
         # 编码消息
         binary_data = self.encode_message(msg_type, data)
         
@@ -110,7 +120,7 @@ class ProtoClient:
         
         # 发送消息
         await self.ws.send(message)
-        print(f"已发送 {msg_type} 请求")
+        print(f"已发送 {msg_type} 请求 (序列号: {data['header']['seq']})")
         
         # 接收响应
         try:
@@ -130,69 +140,51 @@ class ProtoClient:
             await self.ws.close()
             print("连接已关闭")
 
-async def test_login():
-    """测试登录功能"""
-    client = ProtoClient()
-    try:
-        await client.connect()
-        
-        # 创建登录请求
+    async def login(self, account='test_user', password='123456'):
+        """登录功能"""
         login_req = {
             'header': {
-                'msg_type': 'game.LoginReq',
-                'seq': 1
+                'msg_type': 'game.LoginReq'
             },
-            'account': 'test_user',
-            'password': '123456'
+            'account': account,
+            'password': password
         }
         
-        # 发送登录请求
-        resp = await client.send_request('game.LoginReq', login_req)
+        resp = await self.send_request('game.LoginReq', login_req)
         
-        # 处理响应
         if resp:
             print("\n登录响应:")
             if resp.get('error_resp') and resp['error_resp'].get('code') != "SUCCESS":
                 print(f"错误: {resp['error_resp'].get('code')} - {resp['error_resp'].get('message')}")
+                return None
             else:
-                print(f"登录成功! 用户ID: {resp.get('userid')}")
-                return resp.get('userid')  # 返回用户ID供后续使用
-                
-    except Exception as e:
-        print(f"发生错误: {e}")
-    finally:
-        await client.close()
-
-
-async def test_get_player_info():
-    """测试获取玩家信息功能"""
-    client = ProtoClient()
-    try:
-        await client.connect()
-        
-        # 先登录获取用户ID
-        userid = await test_login()
-        if not userid:
-            print("登录失败，无法获取玩家信息")
-            return
+                self.userid = resp.get('userid')  # 保存用户ID
+                print(f"登录成功! 用户ID: {self.userid}")
+                return self.userid
+        return None
+    
+    async def get_player_info(self, userid=None):
+        """获取玩家信息功能"""
+        if not userid and not self.userid:
+            print("未提供用户ID且未登录，无法获取玩家信息")
+            return None
             
-        # 创建获取玩家信息请求
+        userid = userid or self.userid
+            
         get_player_info_req = {
             'header': {
-                'msg_type': 'game.GetPlayerInfoReq',
-                'seq': 2
+                'msg_type': 'game.GetPlayerInfoReq'
             },
             'userid': userid
         }
         
-        # 发送获取玩家信息请求
-        resp = await client.send_request('game.GetPlayerInfoReq', get_player_info_req)
+        resp = await self.send_request('game.GetPlayerInfoReq', get_player_info_req)
         
-        # 处理响应
         if resp:
             print("\n获取玩家信息响应:")
             if resp.get('error_resp') and resp['error_resp'].get('code') != "SUCCESS":
                 print(f"错误: {resp['error_resp'].get('code')} - {resp['error_resp'].get('message')}")
+                return None
             else:
                 player = resp.get('player', {})
                 print("玩家信息:")
@@ -201,13 +193,55 @@ async def test_get_player_info():
                 print(f"- 等级: {player.get('level')}")
                 print(f"- 经验值: {player.get('exp')}")
                 print(f"- VIP等级: {player.get('vip_level')}")
-                
+                return player
+        return None
+
+async def run_long_connection_test():
+    """在单个长连接上执行多个请求"""
+    client = ProtoClient()
+    try:
+        # 建立连接
+        await client.connect()
+        
+        # 1. 登录
+        userid = await client.login()
+        if not userid:
+            print("登录失败，测试终止")
+            return
+        
+        # 2. 获取玩家信息
+        player = await client.get_player_info()
+        if not player:
+            print("获取玩家信息失败")
+            
+        # 3. 等待一段时间，模拟长连接
+        print("\n保持连接中，等待5秒...")
+        await asyncio.sleep(5)
+        
+        # 4. 再次获取玩家信息，验证连接仍然有效
+        print("\n再次获取玩家信息...")
+        player = await client.get_player_info()
+        if not player:
+            print("第二次获取玩家信息失败")
+
+       # 5. 等待一段时间，模拟长连接
+        print("\n保持连接中，等待5秒...")
+        await asyncio.sleep(5)
+        
+        # 6. 再次获取玩家信息，验证连接仍然有效
+        print("\n再次获取玩家信息...")
+        player = await client.get_player_info()
+        if not player:
+            print("第二次获取玩家信息失败")
+                    
+        
+        # 这里可以继续添加更多请求...
+        
     except Exception as e:
-        print(f"发生错误: {e}")
+        print(f"测试过程中发生错误: {e}")
     finally:
+        # 关闭连接
         await client.close()
 
 if __name__ == "__main__":
-    #asyncio.run(test_login())
-    asyncio.run(test_get_player_info())
-    
+    asyncio.run(run_long_connection_test())

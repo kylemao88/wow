@@ -1,47 +1,82 @@
 local skynet = require "skynet"
 local socket = require "socket"
+local ws_proxy = require "ws_proxy"
 local string = require "string"
 local log = require "log"
+local service = require "service"
 
-skynet.start(function()
-    local worker_num = tonumber(skynet.getenv("ws_worker_num")) or 4
+-- 设置日志级别
+log.set_level(log.LOG_LEVEL.DEBUG)
 
-    local worker = {}
-    for i = 1, worker_num do
-        worker[i] = skynet.newservice("ws_worker")
+local wsmaster = {}
+local data = { socket = {} }
+
+local function init()
+    -- 初始化网关配置
+    data.host = skynet.getenv("ws_host") or "0.0.0.0"
+    data.ws_port = tonumber(skynet.getenv("ws_port")) or 9555
+    data.protocol = "websocket"
+
+    -- 确保gate服务已初始化
+    assert(service.gate, "gate service not initialized")
+    log.debug("WebSocket服务初始化中... service.gate: %s", skynet.address(service.gate))
+
+    -- 启动网关监听
+    local ok, err = pcall(skynet.call, service.gate, "lua", "open", {
+        host = data.host,
+        port = data.ws_port,
+        maxclient = 4096,
+        nodelay = true,
+        protocol = data.protocol,
+        watchdog = skynet.self()
+    })
+
+    if not ok then
+        log.fatal("无法启动网关监听: %s", err)
+        skynet.exit()
     end
 
-    local ws_port = tonumber(skynet.getenv("ws_port")) or 9555
-    local balance = 1
-    local id = socket.listen("0.0.0.0", ws_port)
-    log("Listen ws port %s", ws_port)
+    log.info("WebSocket服务已启动，监听地址: %s:%d", data.host, data.ws_port)
+end
 
-    socket.start(id, function(id, addr)
-        log("New connection from %s", addr)
+function wsmaster.socket(subcmd, fd, ...)
+    if subcmd == "open" then
+        data.fd = fd
+        data.addr = ...
+        data.socket[fd] = "LISTENING"
+        log.info("新连接: fd=%d, addr=%s", fd, data.addr)
 
-        if not worker[balance] then
-            worker[balance] = skynet.newservice("ws_worker")
-            log("Created new worker %08x for balance %d", worker[balance], balance)
+        -- 使用代理服务处理WebSocket连接
+        local ok, agent_addr = pcall(ws_proxy.subscribe, fd)
+        if ok and agent_addr then
+            log.debug("WebSocket连接已分配代理: fd=%d, agent=%s", fd, skynet.address(agent_addr))
+            data.socket[fd] = skynet.address(agent_addr)
+            skynet.ret(skynet.pack(agent_addr)) -- 直接返回代理地址
+        else
+            log.error("分配代理失败: fd=%d, 错误: %s", fd, agent_addr or "未知错误")
+            ws_proxy.close(fd)
+            data.socket[fd] = nil
+            skynet.ret()
         end
+    end
+end
 
-        local ok, err = pcall(function()
-            skynet.send(worker[balance], "lua", id)
-        end)
+function wsmaster.disconnect()
+    ws_proxy.close(data.fd)
+    log.warn("客户端断开连接: fd=%d", data.fd)
+end
 
-        if not ok then
-            log.error("Failed to pass connection to worker: %s", err)
-            socket.close(id)
-            return
-        end
+local function finalize()
+    log.info("WebSocket Master服务已启动，监听端口: %d", data.ws_port)
+end
 
-        log("%s connected, pass it to worker :%08x", addr, worker[balance])
-
-        balance = balance + 1
-        if balance > #worker then
-            balance = 1
-        end
-    end)
-
-    --skynet.register('.ws_master')  -- 旧版api，新版本不推荐使用
-    log("web_master booted, ws_port<%s>", ws_port)
-end)
+service.init {
+    command = wsmaster,
+    info = data,
+    require = {
+        -- 使用gate监听WebSocket
+        "gate",
+    },
+    init = init,
+    finalize = finalize,
+}

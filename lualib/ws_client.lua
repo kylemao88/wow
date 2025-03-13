@@ -3,13 +3,6 @@ local string = require "string"
 local log = require "log"
 local proto = require "proto_helper"
 
--- 确保log模块包含所有需要的方法
-if not log.error then
-    log.error = skynet.error
-end
-if not log.info then
-    log.info = skynet.error
-end
 
 local ws_client = {}
 
@@ -26,7 +19,8 @@ local ws_client = {}
 --     -- 处理登录请求
 --     return "game.LoginResp", { userid = "123", token = "xxx" }
 -- end
-local handler = {}
+--local handler = {}
+local handler = require "msg_handler"
 
 function ws_client.handler()
     return handler
@@ -230,7 +224,7 @@ function ws_client.send_error(ws, header, code, message)
     end
 end
 
--- 初始化函数
+--- 初始化函数
 function ws_client.init()
     return function()
         proto.init()
