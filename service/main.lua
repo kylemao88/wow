@@ -22,14 +22,15 @@ skynet.start(function()
 
     -- 启动WebSocket代理管理服务
     local proxyd = skynet.uniqueservice("ws_proxyd")
-    -- skynet.register('.ws_proxyd') -- 旧版api，新版本不推荐使用
-    -- skynet.name(".ws_proxyd", proxyd) -- 使用新版推荐的 name API
     log.info("WebSocket代理管理服务已启动，地址: %s", skynet.address(proxyd))
 
     -- 启动ws_master服务
     local masterd = skynet.uniqueservice("ws_master")
-    --skynet.name(".ws_master", masterd)
     log.info("WebSocket Master服务已启动，地址: %s", skynet.address(masterd))
+
+    -- 启动Redis缓存代理服务^M
+    local cacheproxyd = skynet.uniqueservice("cacheproxyd")
+    log.info("Redis缓存代理服务已启动，地址: %s", skynet.address(cacheproxyd))
 
     log.info("系统初始化完成")
     skynet.exit()

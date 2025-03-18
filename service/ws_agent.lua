@@ -94,14 +94,12 @@ local function init_and_start_websocket(id)
                     ws_obj:start()
                 end)
 
-                if not ok then
-                    log.error("WebSocket消息循环异常退出: %s", err)
-                    is_closed = true
-                    skynet.send(".ws_proxyd", "text", "CLOSED")
-                end
+                -- if not ok then
+                --     log.error("WebSocket消息循环异常退出: %s", err)
+                --     is_closed = true
+                --     skynet.send(".ws_proxyd", "text", "CLOSED")
+                -- end
             end)
-            -- 延时100毫秒，确保WebSocket连接对象已创建
-            skynet.sleep(100)
             return true
         else
             -- 处理普通HTTP请求

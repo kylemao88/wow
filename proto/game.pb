@@ -1,13 +1,23 @@
 
-ê
-common.protocommon"5
+¯
+common.protocommon"î
 Header
 msg_type (	RmsgType
-seq (Rseq"9
+seq (Rseq
+version (Rversion
+	timestamp (R	timestamp%
+client_version (	RclientVersion"9
 	ErrorResp
 code (	Rcode
-message (	Rmessagebproto3
-È
+message (	Rmessage"Ö
+
+PlayerInfo
+userid (Ruserid
+nickname (	Rnickname
+level (Rlevel
+exp (Rexp
+	vip_level (RvipLevelbproto3
+∞
 
 game.protogamecommon.proto"h
 LoginReq&
@@ -17,4 +27,11 @@ game.protogamecommon.proto"h
 	LoginResp0
 
 error_resp (2.common.ErrorRespR	errorResp
-userid (Ruseridbproto3
+userid (Ruserid"R
+GetPlayerInfoReq&
+header (2.common.HeaderRheader
+userid (Ruserid"q
+GetPlayerInfoResp0
+
+error_resp (2.common.ErrorRespR	errorResp*
+player (2.common.PlayerInfoRplayerbproto3

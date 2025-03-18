@@ -22,7 +22,14 @@ local ws_init = {}    -- 代理服务初始化状态
 
 -- 关闭代理服务
 local function close_agent(addr)
-    local fd = assert(ws_addr_fd[addr])
+    local fd = ws_addr_fd[addr]
+    if not fd then
+        log.warn("关闭WebSocket代理服务时找不到对应的fd: addr=%s", skynet.address(addr))
+        -- 仍然清理addr相关的数据
+        ws_addr_fd[addr] = nil
+        return
+    end
+
     log.info("关闭WebSocket代理服务: fd=%d, addr=%s", fd, skynet.address(addr))
     ws_fd_addr[fd] = nil
     ws_addr_fd[addr] = nil
@@ -91,6 +98,7 @@ end)
 skynet.start(function()
     -- 处理代理服务发来的状态通知
     skynet.dispatch("text", function(session, source, cmd)
+        log.debug("收到代理服务状态通知, cmd:%s, source:%s", cmd, source)
         if cmd == "CLOSED" then
             close_agent(source)
         elseif cmd == "READY" then
@@ -134,7 +142,5 @@ skynet.start(function()
     end)
 
     log.info("ws_proxyd代理服务已启动")
-    skynet.register("ws_proxyd")
+    skynet.register(".ws_proxyd")
 end)
-
---skynet.init(ws_client.init())

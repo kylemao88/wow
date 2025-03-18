@@ -24,12 +24,35 @@ handler["game.LoginReq"] = function(ws, msg)
         tostring(ws.id),
         tostring(msg.account))
 
+    -- 1. 检查账号是否存在
+    local user_id = skynet.call(".cacheproxyd", "lua", "get", "account:" .. msg.account)
+
+    -- 2. 新用户注册
+    if not user_id then
+        user_id = tostring(skynet.call(".cacheproxyd", "lua", "incr", "global:userid"))
+        skynet.call(".cacheproxyd", "lua", "hmset",
+            "user:" .. user_id,
+            "account", msg.account,
+            "nickname", "Player" .. user_id,
+            "level", 1,
+            "exp", 0,
+            "vip", 0
+        )
+        skynet.call(".cacheproxyd", "lua", "set", "account:" .. msg.account, user_id)
+    end
+
+    -- 3. 生成会话token
+    local token = skynet.call(".cacheproxyd", "lua", "generate_session", user_id)
+
+
     local resp = {
         error_resp = {
             code = "SUCCESS",
             message = "Login successful"
         },
-        userid = 10086
+        userid = tonumber(user_id),
+        token = token,
+        expires_in = 3600
     }
 
     return "game.LoginResp", resp
