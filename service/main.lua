@@ -28,9 +28,13 @@ skynet.start(function()
     local masterd = skynet.uniqueservice("ws_master")
     log.info("WebSocket Master服务已启动，地址: %s", skynet.address(masterd))
 
-    -- 启动Redis缓存代理服务^M
+    -- 启动Redis缓存代理服务
     local cacheproxyd = skynet.uniqueservice("cacheproxyd")
     log.info("Redis缓存代理服务已启动，地址: %s", skynet.address(cacheproxyd))
+
+    -- 启动DB缓存代理服务
+    local dbproxyd = skynet.uniqueservice("dbproxyd")
+    log.info("DB缓存代理服务已启动，地址: %s", skynet.address(dbproxyd))
 
     log.info("系统初始化完成")
     skynet.exit()

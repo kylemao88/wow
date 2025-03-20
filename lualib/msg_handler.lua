@@ -64,21 +64,68 @@ handler["game.GetPlayerInfoReq"] = function(ws, msg)
         tostring(ws.id),
         tonumber(msg.userid))
 
-    -- 模拟从数据库获取玩家信息
+    -- -- 模拟从数据库获取玩家信息
+    -- local resp = {
+    --     error_resp = {
+    --         code = "SUCCESS",
+    --         message = "Get player info successful"
+    --     },
+    --     player = {
+    --         userid = msg.userid,
+    --         nickname = "测试玩家",
+    --         level = 10,
+    --         exp = 1000,
+    --         vip_level = 1
+    --     }
+    -- }
+
+    -- 从MySQL数据库获取玩家详细信息
+    log.info("正在查询数据库获取玩家信息，用户ID:%d", msg.userid)
+
+    -- 调用dbproxyd服务执行查询
+    local result, err = skynet.call(".dbproxyd", "lua", "query", {
+        sql = "SELECT userid, nickname, level, exp, vip_level FROM users WHERE userid = ?",
+        params = { msg.userid }
+    })
+
+    -- 处理查询结果
+    if not result then
+        log.error("数据库查询失败，用户ID:%d 错误:%s", msg.userid, err)
+        return "game.GetPlayerInfoResp", {
+            error_resp = {
+                code = "DB_ERROR",
+                message = "数据库查询失败"
+            }
+        }
+    end
+
+    if #result == 0 then
+        log.warn("玩家不存在，用户ID:%d", msg.userid)
+        return "game.GetPlayerInfoResp", {
+            error_resp = {
+                code = "USER_NOT_FOUND",
+                message = "玩家不存在"
+            }
+        }
+    end
+
+    -- 转换数据类型（数据库返回字段可能为字符串）
+    local player_info = result[1]
     local resp = {
         error_resp = {
             code = "SUCCESS",
-            message = "Get player info successful"
+            message = "获取玩家信息成功"
         },
         player = {
-            userid = msg.userid,
-            nickname = "测试玩家",
-            level = 10,
-            exp = 1000,
-            vip_level = 1
+            userid = tonumber(player_info.userid),
+            nickname = player_info.nickname or "未知玩家",
+            level = tonumber(player_info.level) or 1,
+            exp = tonumber(player_info.exp) or 0,
+            vip_level = tonumber(player_info.vip_level) or 0
         }
     }
 
+    log.info("成功获取玩家信息，用户ID:%d 昵称:%s", msg.userid, resp.player.nickname)
     return "game.GetPlayerInfoResp", resp
 end
 
