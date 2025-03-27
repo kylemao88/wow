@@ -4,7 +4,9 @@ logpath = root .. "run"
 harbor = 0
 start = "main"	-- main script
 --start = "ws_master"  -- 入口服务
-luaservice = root .. "service/?.lua;" .. root .."skynet/service/?.lua"
+
+-- 添加test目录到lua服务路径
+luaservice = root .. "service/?.lua;" .. root .. "test/?.lua;" .. root .."skynet/service/?.lua"
 lualoader = root .. "skynet/lualib/loader.lua"
 lua_path = root .. "lualib/?.lua;" .. root .. "skynet/lualib/?.lua;" .. root .. "skynet/lualib/?/init.lua"
 lua_cpath = root .. "skynet/luaclib/?.so"
@@ -15,8 +17,24 @@ ws_worker_num = 4    -- 工作线程数(已废弃)
 ws_host = "0.0.0.0"  -- 监听地址
 ws_port = 8081       -- 监听端口（需与前端保持一致）
 
+-- 协议类型配置: protobuf 或 sproto
+--protocol_type = "protobuf"
+protocol_type = "sproto"
+
 -- 日志配置
 --log_level = "3"  -- 支持TRACE = 1, DEBUG = 2, INFO = 3,	WARN = 4, ERROR = 5, FATAL = 6
+
+-- 数据库配置
+db_host = "9.135.71.248"
+db_port = 3306
+db_user = "root"
+db_password = "uSvUQ@9847yaSC"
+db_name = "wfff"
+
+-- Redis配置
+redis_host = "127.0.0.1"
+redis_port = 6379
+redis_password = "123456"
 
 if $DAEMON then
 	logger = root .. "run/skynet.log"

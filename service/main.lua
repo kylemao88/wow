@@ -1,8 +1,8 @@
 local skynet = require "skynet"
 local log = require "log"
-
 --print("log module:", log)
 --print("LOG_LEVEL:", log.LOG_LEVEL)
+local protocol_selector = require "protocol_selector" -- 新增：引入协议选择器
 
 -- 设置日志级别
 log.set_level(log.LOG_LEVEL.DEBUG)
@@ -19,6 +19,16 @@ skynet.start(function()
     -- 启动调试控制台
     skynet.newservice("debug_console", 8000)
     log.debug("调试控制台已启动，端口: 8000")
+
+    -- 初始化协议
+    local protocol = protocol_selector.init()
+    log.info("使用 %s 协议", protocol.type)
+
+    -- 如果使用Sproto协议，初始化Sproto加载器
+    if protocol.type == protocol_selector.PROTOCOL_TYPE.SPROTO then
+        local sproto_loader = skynet.uniqueservice("sproto_loader")
+        log.info("Sproto加载器服务已启动，地址: %s", skynet.address(sproto_loader))
+    end
 
     -- 启动WebSocket代理管理服务
     local proxyd = skynet.uniqueservice("ws_proxyd")

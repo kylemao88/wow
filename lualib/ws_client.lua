@@ -228,6 +228,7 @@ end
 function ws_client.init()
     return function()
         proto.init()
+        log.info("protobuf协议初始化完成")
     end
 end
 

@@ -1,13 +1,10 @@
 local skynet = require "skynet"
 require "skynet.manager"
---require "skynet.debug"
---local string = require "string"
 local socket = require "socket"
 local websocket = require "websocket"
-local ws_client = require "ws_client"
+local protocol_selector = require "protocol_selector" -- 新增：协议选择器
 local sockethelper = require "http.sockethelper"
 local httpd = require "http.httpd"
---local urllib = require "http.url"
 local log = require "log"
 
 -- 注册协议
@@ -25,9 +22,9 @@ skynet.register_protocol {
     unpack = skynet.tostring,
 }
 
---local ws_fd = tonumber(...) -- 从启动参数获取WebSocket连接fd
 local ws_obj = nil      -- WebSocket对象
 local is_closed = false -- 连接是否已关闭
+local protocol = nil    -- 当前使用的协议
 
 -- WebSocket事件处理器
 local ws_handler = {}
@@ -49,9 +46,10 @@ end
 
 function ws_handler.on_message(ws, message)
     log.info("WebSocket代理服务: 收到消息: total_length=%d", #message)
-
     -- 使用ws_client模块处理消息
-    ws_client.dispatch(ws, message)
+    --ws_client.dispatch(ws, message)
+    -- 使用当前协议处理消息
+    protocol.dispatch(ws, message)
 end
 
 -- 初始化并启动WebSocket连接
@@ -117,6 +115,13 @@ end
 
 -- 处理来自其他服务的请求
 skynet.start(function()
+    -- 初始化协议
+    protocol = protocol_selector.get_current()
+    log.info("WebSocket代理服务: 使用 %s 协议", protocol.type)
+
+    -- 执行协议初始化
+    skynet.init(protocol.init)
+
     -- 注册所有消息处理器
     skynet.dispatch("text", function(session, source, cmd)
         if cmd == "CLOSE" then
@@ -137,8 +142,9 @@ skynet.start(function()
 
     -- 处理Lua请求
     skynet.dispatch("lua", function(session, source, cmd, id)
-        -- 处理新的连接请求
+        -- 处理新的连接
         if cmd == "START" then
+            log.info("收到START命令，初始化WebSocket连接: %s", tostring(id))
             socket.start(id)
             local ok, err = pcall(init_and_start_websocket, id)
             if ok and ws_obj then
@@ -149,8 +155,14 @@ skynet.start(function()
                 skynet.send(".ws_proxyd", "text", "FAIL")
                 skynet.ret(skynet.pack(false))
             end
+            -- todo ：试试这样写法效果是不是一样的，这样写法比较简洁
+            -- local ok = init_and_start_websocket(id)
+            -- skynet.ret(skynet.pack(ok))
+        elseif cmd == "CALL" then
+            -- 处理其他命令
+            skynet.ret(skynet.pack(false))
         else
-            log.error("未知的Lua命令: %s", cmd)
+            log.error("WebSocket代理服务: 未知Lua命令: %s", cmd)
             skynet.ret(skynet.pack(false))
         end
     end)
@@ -172,4 +184,5 @@ skynet.start(function()
     log.info("ws_agent代理服务已启动")
 end)
 
-skynet.init(ws_client.init())
+-- 删除或保持注释状态
+-- skynet.init(ws_client.init())

@@ -208,6 +208,6 @@ async def test_get_player_info():
         await client.close()
 
 if __name__ == "__main__":
-    #asyncio.run(test_login())
-    asyncio.run(test_get_player_info())
+    asyncio.run(test_login())
+    #asyncio.run(test_get_player_info())
     
