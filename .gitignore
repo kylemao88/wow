@@ -1,2 +1,7 @@
 /run
 /cservice
+
+# 忽略生成的protobuf文件
+test/protos.pb
+protos.pb
+*.pb
