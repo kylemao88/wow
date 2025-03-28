@@ -38,15 +38,38 @@ make linux
 
 如何运行客户端
 ==============
-debug版本
+【protobuf】debug版本
 ```
 python3.8 test/ws_client.py
 ```
-simple版本
+【protobuf】simple版本
 ```
 python3.8 test/ws_client_simple.py
 ```
+【protobuf】长连接版本
+```
+python3.8 test/ws_client_longconn.py
+```
+【sproto】客户端
+```
+python3.8 test/ws_client_sproto.py
+```
 
+配置说明
+==============
+```
+1. 配置文件config
+    a. ws_host = "0.0.0.0"  -- 监听ip地址
+    b. ws_port = 8081       -- 监听端口（注意端口重复占用问题）
+    c. protocol_type = "sproto"  -- 协议类型配置: protobuf 或 sproto
+```
+
+协议和实现handler说明
+==============
+```
+1. protobuf协议部分可参考docs/websocket_pb_flow.md
+2. sproto协议部分可参考docs/websocket_sproto_flow.md
+```
 
 
 注意问题记录
@@ -73,6 +96,61 @@ chmod 755 ../../skynet/luaclib/pb.so
    并且在service服务间互相调用时，应该注意服务间的上下文环境，避免在服务间传递资源后失效，比如fd等；
 ```
 
+```
+4. Lua处理器[sproto_handler.lua]是如何处理消息头的 ：
+   a. 在`sproto_handler.lua` 中，关键代码是var.request(name, args, session_id),而 var.request 是在初始化时通过以下代码创建的：
+        log("开始创建host")
+        var.host = s2c_proto:host "package"
+        log("成功创建host")
+        log("开始解析c2s协议")
+        local c2s_proto = sproto.parse(c2s_content)
+        log("成功解析c2s协议")
+        log("开始attach c2s协议")
+        var.request = var.host:attach(c2s_proto)
+        log("成功attach c2s协议")
+
+  b. 实际的打包过程：
+    当调用 var.request(name, args, session_id) 时，Sproto 库会执行以下操作：
+    1. 查找名为 name 的协议定义（例如 "ping"、"signin" 等）
+    2. 自动创建一个包含 .package 字段的消息头
+    3. 将 session_id 设置到 .package.session 字段
+    4. 将协议 ID（例如 ping 的 1、signin 的 3）设置到 .package.type 字段
+    5. .package.ud 字段通常不设置，除非显式提供
+    这个过程是由 Sproto 库内部处理的，不需要开发者手动构建消息头。
+
+  c. 具体实现细节 :
+    在 Sproto 库内部， var.request 函数（由 var.host:attach(c2s_proto) 创建）会：
+    1. 根据协议名称查找对应的协议 ID
+    2. 创建一个包含 .package 的消息结构
+    3. 设置 .package.type 为协议 ID
+    4. 设置 .package.session 为传入的 session_id
+    5. 将用户参数 args 添加到消息体中
+    6. 序列化整个消息（包括头部和消息体）
+    这样，客户端不需要显式构建 .package 结构，只需要提供协议名称、参数和会话 ID，Sproto 库会自动处理消息头的构建和序列化。
+
+  d. 总结：
+    .package 消息头的三个字段处理方式：
+    - type ：由协议名称自动映射到对应的协议 ID
+    - session ：直接使用传入的 session_id
+    - ud ：通常不设置，除非显式提供
+    这种设计使得开发者可以专注于业务逻辑，而不需要关心底层的消息头构建细节。      
+```
+
+```
+5. 记录一下依赖项（可能有遗漏）：
+   a. autoconf 及其相关工具:
+        sudo yum update
+        sudo yum install autoconf automake libtool
+        sudo yum groupinstall "Development Tools"
+        make linux
+   a. Lua 5.3或者更高版本 、Lua 开发包 、  LuaRocks
+        sudo yum install lua-devel
+        sudo yum install luarocks ；  luarocks make rockspecs/lua-protobuf-scm-1.rockspec ；  
+   b. Python 3.8+  &&  pip（python包管理器）
+   c. Lua依赖库： sproto.so 、cjson.so 、 lpeg.so （ 推荐目录 /usr/local/lib/lua/5.3 ）
+   d. lua-resty-websocket : OpenResty 的 WebSocket 库 （ 可选 ） 
+   e. Python 依赖库 ： websockets 、 protobuf 、 sproto等
+```
 
 版本架构演进记录
 ==============
@@ -92,3 +170,10 @@ v0.2 :
     4. ws_proxy.lua 管理websocket连接，包括消息发送、消息分发等；
     5. ws_client.lua 处理消息，包括协议解析、消息分发； 消息分发会回调业务注册的方法，此设计为方便各业务专注业务逻辑实现；
 ```
+
+```
+v0.3 :
+    1. 
+
+```
+
