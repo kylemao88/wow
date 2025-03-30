@@ -72,6 +72,104 @@ python3.8 test/ws_client_sproto.py
 ```
 
 
+Sproto 协议客户端关键代码实现
+==============
+## 1. 发送 Sproto 协议的关键代码 (Python 客户端)
+在 ws_client_sproto.py 中，发送 Sproto 协议的关键代码如下：
+```python
+# 1. 生成会话ID
+session_id = self.next_session()
+if session_id == 0:  # 避免使用0作为会话ID
+    session_id = self.next_session()
+
+# 2. 使用Lua编码请求
+req_data = await self.sproto_handler.encode_request(name, args, session_id)
+
+# 3. 添加长度前缀 - 使用2字节大端序
+length_prefix = struct.pack(">H", len(req_data))
+message = length_prefix + req_data
+
+# 4. 发送消息
+await self.ws.send(message)
+```
+## 2. Sproto 协议组包的关键代码 (Lua 处理器)
+在 sproto_handler.lua 中，Sproto 协议组包的关键代码如下：
+```lua
+-- 编码请求
+function handler.encode_request(name, args, session_id)
+    if not var.request then
+        return nil, "请先初始化协议"
+    end
+
+    -- 使用 sproto 库编码请求
+    local ok, data_or_err = pcall(function()
+        -- 核心组包代码：调用 var.request 函数:
+            -- name : 协议名称（如 "ping", "signin")
+            -- args : 请求参数
+            -- session_id : 会话ID
+        return var.request(name, args, session_id)
+    end)
+
+    if not ok then
+        return nil, data_or_err
+    end
+
+    -- 将二进制数据转换为十六进制字符串
+    local hex = ""
+    for i = 1, #data_or_err do
+        hex = hex .. string.format("%02x", string.byte(data_or_err, i))
+    end
+
+    return hex
+end
+```
+而 var.request 函数是在初始化时创建的：
+```lua
+-- 初始化协议
+function handler.init(c2s_path, s2c_path)
+    -- 加载协议文件内容
+    local f = assert(io.open(c2s_path))
+    local c2s_content = f:read "a"
+    f:close()
+...    
+    local f = assert(io.open(s2c_path))
+    local s2c_content = f:read "a"
+    f:close()
+
+    -- 解析协议
+    local s2c_proto = sproto.parse(s2c_content)
+    -- 创建 host 对象，指定 "package" 作为消息头
+    var.host = s2c_proto:host "package"
+...    
+    -- 解析 c2s 协议，将其附加到 host 对象，创建 request 函数
+    local c2s_proto = sproto.parse(c2s_content)
+    var.request = var.host:attach(c2s_proto)
+end
+```
+流程说明：
+   - 当调用 var.request(name, args, session_id) 时，Sproto 库会：
+     1. 查找名为 name 的协议定义
+     2. 自动创建包含 .package 字段的消息头
+     3. 将 session_id 设置到 .package.session 字段
+     4. 将协议 ID 设置到 .package.type 字段
+     5. 将用户参数 args 添加到消息体中
+     6. 序列化整个消息（包括头部和消息体）
+## 3. 总结
+Sproto 协议的发送和组包流程：
+1. 客户端发送流程 ：
+   - 生成会话ID
+   - 调用 Lua 处理器编码请求
+   - 添加长度前缀
+   - 通过 WebSocket 发送
+2. 协议组包流程 ：
+   - 初始化时解析协议文件
+   - 创建 host 对象，指定 "package" 作为消息头
+   - 创建 request 函数
+   - 调用 request 函数编码消息，自动处理消息头
+   - 将二进制数据转换为十六进制字符串返回给客户端
+
+
+
 注意问题记录
 ==============
 ```
