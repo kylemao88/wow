@@ -72,6 +72,24 @@ python3.8 test/ws_client_sproto.py
 ```
 
 
+Sproto协议加载过程
+==============
+ ```
+ 文本协议文件(.sproto)
+       |
+       V
+ 读取文件内容(f:read "a")
+       |
+       V
+ 合并多个文件内容,如果有的话(table.concat)
+       |
+       V
+ 解析为二进制格式(sprotoparser.parse)
+       |
+       V
+ 保存到共享内存(sprotoloader.save)
+ ```
+
 Sproto 协议客户端关键代码实现
 ==============
 ## 1. 发送 Sproto 协议的关键代码 (Python 客户端)
