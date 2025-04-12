@@ -8,10 +8,14 @@
 ```
 git submodule update --init
 ```
-1. 编译 skynet
+3. 编译 skynet
 ```
 cd skynet
 make linux
+```
+4. 编译 pb.so
+```
+详见`注意问题记录`第1点；
 ```
 
 
