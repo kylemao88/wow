@@ -289,7 +289,12 @@ v0.2 :
 
 ```
 v0.3 :
-    1. 
-
+    1. 多通信协议支持，支持protobuf 和 sproto ；
+       protocol_selector.lua: 协议选择器，支持动态选择不同协议格式；
+    2. websocket.lua: WebSocket通信基础实现，包含连接建立、数据帧处理和消息收发逻辑；
+    3. 增加了sproto协议实现； sproto_client.lua: Sproto协议客户端实现，负责编码解码和消息处理
+    4. ws_proxy.lua: WebSocket代理服务，用于连接转发和负载均衡
+    5. 增加对DB和Redis的操作代理服务；cacheproxyd 和 dbproxyd 负责访问redis和mysql；
+    6. 完善config；
 ```
 
