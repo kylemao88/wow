@@ -321,5 +321,97 @@ async def main():
         # 关闭连接
         await client.close()
 
+async def test_get_player_member():
+    """测试获取玩家成员信息"""
+    client = SprotoClient()
+    if await client.connect():
+        try:
+            print("\n开始发送get_player_member请求...")
+            # 修改这里：将字符串参数改为不带引号的形式
+            response = await client.request_with_response("get_player_member", {"player_id": "player_101"})
+            
+            if response:
+                print("\n获取玩家成员信息成功:")
+                print(f"会话ID: {response.get('session')}")
+                
+                # 打印成员信息
+                members = response.get('response', {}).get('members', [])
+                if members:
+                    print(f"共获取到 {len(members)} 个成员信息:")
+                    for i, member in enumerate(members, 1):
+                        print(f"\n成员 {i}:")
+                        print(f"  ID: {member.get('member_id')}")
+                        print(f"  昵称: {member.get('nickname')}")
+                        print(f"  性别: {member.get('gender')}")
+                        print(f"  职业: {member.get('profession_name')} (ID: {member.get('profession_id')})")
+                        print(f"  种族: {member.get('race_name')} (ID: {member.get('race_id')})")
+                        print(f"  天赋: {member.get('talent_name')} (ID: {member.get('talent_id')})")
+                        print(f"  位置: {member.get('position')}")
+                        print(f"  装备等级: {member.get('equipment_level')}")
+                else:
+                    print("未获取到成员信息")
+            else:
+                print("请求失败或未收到响应")
+        except Exception as e:
+            print(f"测试过程中出错: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            # 关闭连接
+            await client.close()
+    else:
+        print("连接服务器失败")
+
+async def test_get_boss_info():
+    """测试获取Boss信息"""
+    client = SprotoClient()
+    if await client.connect():
+        try:
+            print("\n开始发送get_boss_info请求...")
+            response = await client.request_with_response("get_boss_info", {"boss_id": "boss_001"})
+            
+            if response:
+                print("\n获取Boss信息成功:")
+                print(f"会话ID: {response.get('session')}")
+                
+                # 检查响应状态
+                resp_data = response.get('response', {})
+                ok = resp_data.get('ok', False)
+                
+                if ok:
+                    # 打印Boss信息
+                    boss = resp_data.get('boss', {})
+                    if boss:
+                        print("\nBoss信息:")
+                        print(f"  ID: {boss.get('boss_id')}")
+                        print(f"  名称: {boss.get('boss_name')}")
+                        print(f"  等级: {boss.get('boss_level')}")
+                        print(f"  最低要求等级: {boss.get('min_required_level')}")
+                        print(f"  需要坦克数量: {boss.get('tank_required')}")
+                        print(f"  需要治疗数量: {boss.get('healer_required')}")
+                        print(f"  需要输出数量: {boss.get('dps_required')}")
+                        print(f"  战斗时长限制: {boss.get('battle_time_limit')}秒")
+                        print(f"  备注: {boss.get('remarks')}")
+                    else:
+                        print("响应中没有Boss信息")
+                else:
+                    # 打印错误信息
+                    error = resp_data.get('error', {})
+                    print(f"请求失败: {error.get('code')} - {error.get('message')}")
+            else:
+                print("请求失败或未收到响应")
+        except Exception as e:
+            print(f"测试过程中出错: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            # 关闭连接
+            await client.close()
+    else:
+        print("连接服务器失败")
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    # 可以选择运行main函数或其他测试函数
+    # asyncio.run(main())
+    # asyncio.run(test_get_player_member())
+    asyncio.run(test_get_boss_info())

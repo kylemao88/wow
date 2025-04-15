@@ -15,7 +15,7 @@ local function create_conn()
     while retry > 0 do
         local conn, err = redis.connect({
             host = "127.0.0.1",
-            port = 6379,
+            port = 26379,
             auth = "123456",
             db = 0,
             socket_timeout = 5000

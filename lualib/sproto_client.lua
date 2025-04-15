@@ -50,9 +50,11 @@ function sproto_client.dispatch(ws, message)
                 local resp_data = response(result)
                 local length_prefix = string.pack(">H", #resp_data)
                 ws:send_binary(length_prefix .. resp_data)
-                log.info("Sproto回应消息: 长度=%d, 十六进制=%s", #resp_data,
-                    string.format("%s",
-                        (string.gsub(resp_data, ".", function(c) return string.format("%02X ", string.byte(c)) end))))
+                -- log.info("Sproto回应消息: 长度=%d, 十六进制=%s", #resp_data,
+                --     string.format("%s",
+                --         (string.gsub(resp_data, ".", function(c) return string.format("%02X ", string.byte(c)) end))))
+                log.info("Sproto回应消息: 长度=%d", #resp_data)
+
 
                 -- 添加调试日志
                 log.info("发送响应: %s", tostring(result))

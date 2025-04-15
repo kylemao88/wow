@@ -17,7 +17,7 @@ local function create_conn()
         local conn = mysql.connect({
             host = "9.135.71.248",
             port = 3306,
-            database = "wfff",
+            database = "wow",
             user = "root",
             password = "uSvUQ@9847yaSC",
             max_packet_size = 1024 * 1024
@@ -102,7 +102,6 @@ function command.query(_, args)
             return nil, "PARAMS_NOT_TABLE"
         end
 
-
         -- 统计需要参数数量
         local required = select(2, sql:gsub("%?", "?"))
         if required ~= #params then
@@ -123,18 +122,18 @@ function command.query(_, args)
             -- 根据类型处理
             local vtype = type(value)
             if vtype == "number" then
-                return tostring(value)                          -- 数字直接使用
+                return tostring(value)            -- 数字直接使用
             elseif vtype == "string" then
-                return "'" .. mysql.quote_sql_str(value) .. "'" -- 字符串转义
+                return mysql.quote_sql_str(value) -- 字符串转义
             elseif vtype == "boolean" then
-                return value and "1" or "0"                     -- 布尔转数字
+                return value and "1" or "0"       -- 布尔转数字
             else
                 error("不支持的参数类型: " .. vtype)
             end
         end)
     end
-    -- 增加日志
-    log.info("SQL: %s", sql)
+    --
+    --log.info("SQL: %s", sql)
     local ok, result = pcall(conn.query, conn, sql)
     command.release_conn(conn)
 
@@ -142,6 +141,7 @@ function command.query(_, args)
         log.error("SQL执行失败: %s | SQL: %s", result, sql)
         return nil, result
     end
+    log.info("SQL执行成功: %s", sql)
 
     -- 处理查询结果
     if type(result) == "table" then
