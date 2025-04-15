@@ -5,10 +5,10 @@ harbor = 0
 start = "main"	-- main script
 --start = "ws_master"  -- 入口服务
 
--- 添加test目录到lua服务路径
+-- 
 luaservice = root .. "service/?.lua;" .. root .. "test/?.lua;" .. root .."skynet/service/?.lua"
 lualoader = root .. "skynet/lualib/loader.lua"
-lua_path = root .. "lualib/?.lua;" .. root .. "skynet/lualib/?.lua;" .. root .. "skynet/lualib/?/init.lua"
+lua_path = root .. "lualib/?.lua;" .. root .. "lualib/pkg/?.lua;" .. root .. "skynet/lualib/?.lua;" .. root .. "skynet/lualib/?/init.lua"
 lua_cpath = root .. "skynet/luaclib/?.so"
 cpath = root .. "/cservice/?.so;"..root.."/skynet/cservice/?.so"
 

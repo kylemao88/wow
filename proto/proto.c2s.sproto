@@ -139,4 +139,37 @@ get_boss_info 12 {
     }
 }
 
+# pve玩家选择会员备战接口
+pve_prepare_battle 13 {
+    request {
+        player_id 0 : string      # 玩家ID
+        boss_id 1 : string        # 目标Boss ID
+        member_ids 2 : *string    # 参战会员ID列表
+    }
+    
+    response {
+        ok 0 : boolean            # 是否成功
+        error 1 : error_info      # 错误信息，仅当ok为false时有效
+        battle_id 2 : string      # 生成的战斗ID
+        ready_status 3 : boolean  # 备战状态是否就绪
+    }
+}
+
+
+# pve 玩家战斗接口
+pve_battle 14 {
+    request {
+        battle_id 0 : string  # 战斗ID
+    }
+    
+    response {
+        ok 0 : boolean            # 是否成功
+        error 1 : error_info      # 错误信息，仅当ok为false时有效
+        battle_id 2 : string
+        is_win 3 : boolean           # 是否胜利
+        is_retry 4 : boolean         # 是否可重开 # 当局胜利的话，此字段无效
+        battle_duration 5 : integer  # 当局战斗时长（单位：秒）
+        retry_count 6 : integer      # 已重开次数
+    }
+}
 

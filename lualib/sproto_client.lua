@@ -65,10 +65,30 @@ function sproto_client.dispatch(ws, message)
                 end
             else
                 log.error("处理Sproto消息错误: %s", result)
-                local ERROR = {}
-                local resp_data = response(ERROR, result)
+                -- 构建标准错误响应，而不是空表
+                local ERROR = {
+                    ok = false,
+                    error = {
+                        code = "SERVER_ERROR",
+                        message = tostring(result) or "未知错误"
+                    }
+                }
+                local resp_data = response(ERROR)
                 local length_prefix = string.pack(">H", #resp_data)
                 ws:send_binary(length_prefix .. resp_data)
+                
+                -- 添加调试日志
+                log.info("发送错误响应: %s", tostring(ERROR))
+                if type(ERROR) == "table" then
+                    for k, v in pairs(ERROR) do
+                        log.info("  %s = %s", tostring(k), tostring(v))
+                        if k == "error" and type(v) == "table" then
+                            for ek, ev in pairs(v) do
+                                log.info("    %s = %s", tostring(ek), tostring(ev))
+                            end
+                        end
+                    end
+                end
             end
         end)
     else

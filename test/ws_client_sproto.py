@@ -410,8 +410,225 @@ async def test_get_boss_info():
     else:
         print("连接服务器失败")
 
+async def test_pve_prepare_battle():
+    """测试PVE玩家选择会员备战接口"""
+    client = SprotoClient()
+    if await client.connect():
+        try:
+            print("\n开始发送pve_prepare_battle请求...")
+            
+            # 准备请求参数
+            request_data = {
+                "player_id": "player_101",
+                "boss_id": "boss_001",
+                "member_ids": [
+                    "member_001",  # 坦克
+                    "member_002",  # 坦克
+                    "member_003",  # 治疗
+                    "member_004",  # 治疗
+                    "member_005",  # 治疗
+                    "member_006",  # 治疗
+                    "member_007",  # 输出
+                    "member_008",  # 输出
+                    "member_009",  # 输出
+                    "member_010",  # 输出
+                    "member_011",  # 输出
+                    "member_012",  # 输出
+                    "member_013",  # 输出
+                    "member_014",  # 输出
+                    "member_015",  # 输出
+                    "member_016",  # 输出
+                    "member_017",  # 输出
+                    "member_018",  # 输出
+                    "member_019",  # 输出
+                    "member_020",  # 输出
+                    "member_021"   # 输出
+                ]
+            }
+            
+            response = await client.request_with_response("pve_prepare_battle", request_data)
+            
+            if response:
+                print("\nPVE备战请求结果:")
+                print(f"会话ID: {response.get('session')}")
+                
+                # 检查响应状态
+                resp_data = response.get('response', {})
+                ok = resp_data.get('ok', False)
+                
+                if ok:
+                    # 打印备战信息
+                    print("\n备战成功:")
+                    print(f"  战斗ID: {resp_data.get('battle_id')}")
+                    print(f"  备战状态: {'就绪' if resp_data.get('ready_status') else '未就绪'}")
+                else:
+                    # 打印错误信息
+                    error = resp_data.get('error', {})
+                    print(f"备战失败: {error.get('code')} - {error.get('message')}")
+            else:
+                print("请求失败或未收到响应")
+        except Exception as e:
+            print(f"测试过程中出错: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            # 关闭连接
+            await client.close()
+    else:
+        print("连接服务器失败")
+
+async def test_pve_battle():
+    """测试PVE玩家战斗接口"""
+    client = SprotoClient()
+    if await client.connect():
+        try:
+            print("\n开始发送pve_battle请求...")
+            
+            # 首先需要准备一场战斗，获取battle_id
+            print("准备战斗，获取battle_id...")
+            prepare_request = {
+                "player_id": "player_101",
+                "boss_id": "boss_001",
+                "member_ids": [
+                    "member_001", "member_002",  # 坦克
+                    "member_003", "member_004", "member_005", "member_006",  # 治疗
+                    "member_007", "member_008", "member_009", "member_010",
+                    "member_011", "member_012", "member_013", "member_014",
+                    "member_015", "member_016", "member_017", "member_018",
+                    "member_019", "member_020", "member_021"  # 输出
+                ]
+            }
+            
+            prepare_response = await client.request_with_response("pve_prepare_battle", prepare_request)
+            
+            if not prepare_response or not prepare_response.get('response', {}).get('ok', False):
+                print("备战失败，无法继续测试")
+                return
+            
+            battle_id = prepare_response.get('response', {}).get('battle_id')
+            print(f"备战成功，获取到battle_id: {battle_id}")
+            
+            # 使用获取到的battle_id发送战斗请求
+            battle_request = {
+                "battle_id": battle_id
+            }
+            
+            # 发送战斗请求
+            battle_response = await client.request_with_response("pve_battle", battle_request)
+            
+            if battle_response:
+                print("\nPVE战斗请求结果:")
+                print(f"会话ID: {battle_response.get('session')}")
+                
+                # 检查响应状态
+                resp_data = battle_response.get('response', {})
+                ok = resp_data.get('ok', False)
+                
+                if ok:
+                    # 打印战斗结果
+                    print("\n战斗成功:")
+                    print(f"  战斗ID: {resp_data.get('battle_id')}")
+                    print(f"  是否胜利: {'是' if resp_data.get('is_win') else '否'}")
+                    print(f"  是否可重试: {'是' if resp_data.get('is_retry') else '否'}")
+                else:
+                    # 打印错误信息
+                    error = resp_data.get('error', {})
+                    print(f"战斗失败: {error.get('code')} - {error.get('message')}")
+            else:
+                print("请求失败或未收到响应")
+        except Exception as e:
+            print(f"测试过程中出错: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            # 关闭连接
+            await client.close()
+    else:
+        print("连接服务器失败")
+
+async def test_retry_pve_battle():
+    """测试PVE玩家战斗重试接口，使用指定的battle_id"""
+    client = SprotoClient()
+    if await client.connect():
+        try:
+            print("\n开始测试PVE战斗重试功能...")
+            
+            # 使用指定的battle_id
+            battle_id = 'battle_player_101_boss_001_1744715630'
+            print(f"使用指定的battle_id: {battle_id}")
+            
+            # 构建战斗请求
+            battle_request = {
+                "battle_id": battle_id
+            }
+            
+            # 发送战斗请求
+            battle_response = await client.request_with_response("pve_battle", battle_request)
+            
+            if battle_response:
+                print("\nPVE战斗请求结果:")
+                print(f"会话ID: {battle_response.get('session')}")
+                
+                # 检查响应状态
+                resp_data = battle_response.get('response', {})
+                ok = resp_data.get('ok', False)
+                
+                if ok:
+                    # 打印战斗结果
+                    print("\n战斗成功:")
+                    print(f"  战斗ID: {resp_data.get('battle_id')}")
+                    print(f"  是否胜利: {'是' if resp_data.get('is_win') else '否'}")
+                    print(f"  是否可重试: {'是' if resp_data.get('is_retry') else '否'}")
+                    print(f"  战斗时长: {resp_data.get('battle_duration')}秒")
+                    print(f"  已重开次数: {resp_data.get('retry_count')}")
+                    
+                    # 如果可以重试，自动进行重试
+                    if resp_data.get('is_retry'):
+                        print("\n检测到可以重试，自动进行重试...")
+                        retry_response = await client.request_with_response("pve_battle", battle_request)
+                        
+                        if retry_response:
+                            retry_data = retry_response.get('response', {})
+                            if retry_data.get('ok', False):
+                                print("\n重试战斗结果:")
+                                print(f"  战斗ID: {retry_data.get('battle_id')}")
+                                print(f"  是否胜利: {'是' if retry_data.get('is_win') else '否'}")
+                                print(f"  是否可重试: {'是' if retry_data.get('is_retry') else '否'}")
+                                print(f"  战斗时长: {retry_data.get('battle_duration')}秒")
+                                print(f"  已重开次数: {retry_data.get('retry_count')}")
+                            else:
+                                error = retry_data.get('error', {})
+                                print(f"重试失败: {error.get('code')} - {error.get('message')}")
+                        else:
+                            print("重试请求失败或未收到响应")
+                else:
+                    # 打印错误信息
+                    error = resp_data.get('error', {})
+                    print(f"战斗失败: {error.get('code')} - {error.get('message')}")
+                    
+                    # 如果是因为战斗已结束，提供更多信息
+                    if error.get('code') == "BATTLE_ENDED":
+                        print("提示: 该战斗已结束，无法继续进行。您可以准备一场新的战斗或使用其他battle_id。")
+                    # 如果是因为达到重试上限
+                    elif error.get('code') == "MAX_RETRY_REACHED":
+                        print("提示: 该战斗已达到重试上限，无法继续重试。")
+            else:
+                print("请求失败或未收到响应")
+        except Exception as e:
+            print(f"测试过程中出错: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            # 关闭连接
+            await client.close()
+    else:
+        print("连接服务器失败")
+
 if __name__ == "__main__":
     # 可以选择运行main函数或其他测试函数
     # asyncio.run(main())
     # asyncio.run(test_get_player_member())
-    asyncio.run(test_get_boss_info())
+    # asyncio.run(test_get_boss_info())
+    # asyncio.run(test_pve_prepare_battle())
+    # asyncio.run(test_pve_battle())
+    asyncio.run(test_retry_pve_battle())
