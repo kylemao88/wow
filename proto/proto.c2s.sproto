@@ -173,3 +173,28 @@ pve_battle 14 {
     }
 }
 
+# 战斗日志信息结构体
+.battle_log_info {
+    timestamp 0 : string      # 时间戳，格式如 00:00:00 或 00:01:26
+    character_name 1 : string # 人物名称，可能是boss名称或玩家会员名称
+    log_text 2 : string       # 日志话术，如"引到小怪了..扣他DKP！"
+}
+
+# 拉取战斗日志接口
+get_pve_battle_log 15 {
+    request {
+        battle_id 0 : string  # 战斗ID
+        page 1 : integer      # 页码，从1开始
+        num 2 : integer       # 每页数量
+    }
+    
+    response {
+        ok 0 : boolean                # 是否成功
+        error 1 : error_info          # 错误信息，仅当ok为false时有效
+        total 2 : integer             # 总日志数量
+        page 3 : integer              # 当前页码
+        num 4 : integer               # 当前页数量
+        logs 5 : *battle_log_info     # 战斗日志列表
+    }
+}
+
