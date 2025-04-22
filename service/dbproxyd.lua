@@ -15,11 +15,11 @@ local function create_conn()
     local retry = 3
     while retry > 0 do
         local conn = mysql.connect({
-            host = "9.135.71.248",
-            port = 3306,
-            database = "wow",
-            user = "root",
-            password = "uSvUQ@9847yaSC",
+            host = skynet.getenv("db_host"),
+            port = tonumber(skynet.getenv("db_port")),
+            database = skynet.getenv("db_name"),
+            user = skynet.getenv("db_user"),
+            password = skynet.getenv("db_password"),
             max_packet_size = 1024 * 1024
         })
         if conn then

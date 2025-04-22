@@ -14,9 +14,9 @@ local function create_conn()
     local retry = 3
     while retry > 0 do
         local conn, err = redis.connect({
-            host = "127.0.0.1",
-            port = 26379,
-            auth = "123456",
+            host = skynet.getenv("redis_host"),
+            port = tonumber(skynet.getenv("redis_port")),
+            auth = skynet.getenv("redis_password"),
             db = 0,
             socket_timeout = 5000
         })

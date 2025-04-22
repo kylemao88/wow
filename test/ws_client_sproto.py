@@ -546,7 +546,7 @@ async def test_pve_battle():
     else:
         print("连接服务器失败")
 
-async def test_retry_pve_battle():
+
     """测试PVE玩家战斗重试接口，使用指定的battle_id"""
     client = SprotoClient()
     if await client.connect():
@@ -624,6 +624,95 @@ async def test_retry_pve_battle():
     else:
         print("连接服务器失败")
 
+async def test_get_pve_battle_log():
+    """测试拉取战斗日志接口"""
+    client = SprotoClient()
+    if await client.connect():
+        try:
+            print("\n开始发送get_pve_battle_log请求...")
+            
+            # 准备请求参数
+            request_data = {
+                "battle_id": "battle_player_101_boss_001_1745247092",  # 使用一个已存在的战斗ID
+                "page": 1,
+                "num": 20
+            }
+            
+            response = await client.request_with_response("get_pve_battle_log", request_data)
+            
+            if response:
+                print("\n获取战斗日志结果:")
+                print(f"会话ID: {response.get('session')}")
+                
+                # 检查响应状态
+                resp_data = response.get('response', {})
+                ok = resp_data.get('ok', False)
+                
+                if ok:
+                    # 打印日志信息
+                    total = resp_data.get('total', 0)
+                    page = resp_data.get('page', 1)
+                    num = resp_data.get('num', 0)
+                    logs = resp_data.get('logs', [])
+                    
+                    print(f"\n战斗日志获取成功:")
+                    print(f"  总日志数: {total}")
+                    print(f"  当前页码: {page}")
+                    print(f"  本页日志数: {num}")
+                    
+                    if logs:
+                        print("\n日志内容:")
+                        for i, log_entry in enumerate(logs, 1):
+                            timestamp = log_entry.get('timestamp', '')
+                            character = log_entry.get('character_name', '')
+                            text = log_entry.get('log_text', '')
+                            print(f"  {i}. [{timestamp}] {character}: {text}")
+                    else:
+                        print("\n没有找到战斗日志")
+                        
+                    # 如果有多页，尝试获取下一页
+                    if total > page * num:
+                        print("\n尝试获取下一页...")
+                        next_page_request = {
+                            "battle_id": request_data["battle_id"],
+                            "page": page + 1,
+                            "num": num
+                        }
+                        
+                        next_page_response = await client.request_with_response("get_pve_battle_log", next_page_request)
+                        
+                        if next_page_response and next_page_response.get('response', {}).get('ok', False):
+                            next_page_logs = next_page_response.get('response', {}).get('logs', [])
+                            next_page_num = len(next_page_logs)
+                            
+                            print(f"\n第 {page + 1} 页日志获取成功，共 {next_page_num} 条:")
+                            
+                            if next_page_logs:
+                                for i, log_entry in enumerate(next_page_logs, 1):
+                                    timestamp = log_entry.get('timestamp', '')
+                                    character = log_entry.get('character_name', '')
+                                    text = log_entry.get('log_text', '')
+                                    print(f"  {i}. [{timestamp}] {character}: {text}")
+                            else:
+                                print("  没有更多日志")
+                        else:
+                            print("  获取下一页失败")
+                else:
+                    # 打印错误信息
+                    error = resp_data.get('error', {})
+                    print(f"获取战斗日志失败: {error.get('code')} - {error.get('message')}")
+            else:
+                print("请求失败或未收到响应")
+        except Exception as e:
+            print(f"测试过程中出错: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            # 关闭连接
+            await client.close()
+    else:
+        print("连接服务器失败")
+
 if __name__ == "__main__":
     # 可以选择运行main函数或其他测试函数
     # asyncio.run(main())
@@ -631,4 +720,5 @@ if __name__ == "__main__":
     # asyncio.run(test_get_boss_info())
     # asyncio.run(test_pve_prepare_battle())
     # asyncio.run(test_pve_battle())
-    asyncio.run(test_retry_pve_battle())
+    asyncio.run(test_get_pve_battle_log())
+    

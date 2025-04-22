@@ -46,6 +46,10 @@ skynet.start(function()
     local dbproxyd = skynet.uniqueservice("dbproxyd")
     log.info("DB缓存代理服务已启动，地址: %s", skynet.address(dbproxyd))
 
+    -- 启动战斗日志处理服务
+    local battle_log_service = skynet.uniqueservice("battle_log_service")
+    log.info("战斗日志处理服务已启动，地址: %s", skynet.address(battle_log_service))
+
     log.info("系统初始化完成")
     skynet.exit()
 end)

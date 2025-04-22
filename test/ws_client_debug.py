@@ -34,7 +34,7 @@ async def test_login():
             login_req = {
                 'header': header,  # 添加消息头
                 'account': 'test_user',
-                'password': '123456'
+                'password': 'Wow@123456'
             }
 
             try:

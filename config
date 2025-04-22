@@ -29,12 +29,12 @@ db_host = "9.135.71.248"
 db_port = 3306
 db_user = "root"
 db_password = "uSvUQ@9847yaSC"
-db_name = "wfff"
+db_name = "wow"
 
 -- Redis配置
 redis_host = "127.0.0.1"
-redis_port = 6379
-redis_password = "123456"
+redis_port = 26379
+redis_password = "Wow@123456"
 
 if $DAEMON then
 	logger = root .. "run/skynet.log"

@@ -168,7 +168,7 @@ pve_battle 14 {
         battle_id 2 : string
         is_win 3 : boolean           # 是否胜利
         is_retry 4 : boolean         # 是否可重开 # 当局胜利的话，此字段无效
-        battle_duration 5 : integer  # 当局战斗时长（单位：秒）
+        battle_duration 5 : *integer  # 所有战斗时长（单位：秒）
         retry_count 6 : integer      # 已重开次数
     }
 }

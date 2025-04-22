@@ -140,7 +140,7 @@ class ProtoClient:
             await self.ws.close()
             print("连接已关闭")
 
-    async def login(self, account='test_user', password='123456'):
+    async def login(self, account='test_user', password='Wow@123456'):
         """登录功能"""
         login_req = {
             'header': {

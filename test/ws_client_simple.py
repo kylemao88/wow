@@ -143,7 +143,7 @@ async def test_login():
                 'seq': 1
             },
             'account': 'test_user',
-            'password': '123456'
+            'password': 'Wow@123456'
         }
         
         # 发送登录请求
